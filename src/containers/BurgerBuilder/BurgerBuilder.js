@@ -1,0 +1,144 @@
+import React,{ Component } from "react";
+import Aux from "../../hoc/Auxiliary";
+import Burger from "../../components/Burger/Burger";
+import BuildControls from "../../components/Burger/BuildControls/BuildControls";
+import Modal from "../../components/UI/Modal/Modal";
+import OrderSummary from "../../components/Burger/OrderSummary/OrderSummary";
+import Axios from "../../hoc/axios-order";
+import Spinner from "../../components/UI/Spinner/Spinner";
+import withErrorHandler from "../../hoc/withErrorHandler/withErrorHandler";
+
+
+const INGREDIENT_PRICE={
+  meat: 0.5,
+  salad:0.4,
+  cheese:0.3,
+  bacon:0.1
+}
+
+
+
+class BurgerBuilder extends Component{
+  state={
+    Ingredients:null,
+    totalPrice: 4,
+    isPurchasable: false,
+    purchasing: false,
+    isLoading:false,
+    error:false
+  }
+
+  componentDidMount(){
+    Axios.get('Ingredients.json')
+    .then(response=>{
+      this.setState({Ingredients:response.data})
+    })
+    .catch(error=>{
+      console.log(error)
+      this.setState({error:true})
+    })
+  }
+
+  isPurshasingHandler = ()=>{
+    this.setState({purchasing: true})
+  }
+
+
+  hideBackdropHandler = ()=>{
+    this.setState({purchasing: false});
+    this.props.history.goBack();
+  }
+
+  continueOrderHandler = ()=>{
+    const queryParam =[];
+    for(let i in this.state.Ingredients){
+      queryParam.push(encodeURIComponent(i)+"=" +encodeURIComponent(this.state.Ingredients[i]))
+    }
+    queryParam.push("price="+this.state.totalPrice);
+    const queryString =   queryParam.join('&');
+    this.props.history.push({
+      pathname:'/checkout',
+      search:'?'+queryString
+    })
+  }
+
+
+  enableOrderButtonHandler = (dupIngredients)=>{
+    let sum = Object.keys(INGREDIENT_PRICE).map((Ingredient)=>{
+        return dupIngredients[Ingredient];
+    }).reduce((summ, el)=>{
+      return summ + el;
+    },0);
+    this.setState({isPurchasable: sum > 0})
+  }
+
+  addIngredientHandler = (type)=>{
+    let dupIngredient = {...this.state.Ingredients};
+    dupIngredient[type] =dupIngredient[type] + 1;
+    let olderPrice = this.state.totalPrice,
+    newTotalPrice = olderPrice + INGREDIENT_PRICE[type];
+    this.setState({Ingredients:dupIngredient, totalPrice:newTotalPrice})
+    this.enableOrderButtonHandler(dupIngredient);
+  }
+
+  removeIngredientHandler = (type)=>{
+    let dupIngredientRemove = {...this.state.Ingredients};
+    if(dupIngredientRemove[type] ===0)
+    return;
+    dupIngredientRemove[type] =dupIngredientRemove[type] - 1;
+    let olderPriceRemove = this.state.totalPrice,
+    newTotalPriceRemove = olderPriceRemove - INGREDIENT_PRICE[type];
+    this.setState({Ingredients:dupIngredientRemove, totalPrice:newTotalPriceRemove})
+    this.enableOrderButtonHandler(dupIngredientRemove);
+  }
+
+  render(){
+    const disabledInfo = {
+      ...INGREDIENT_PRICE
+    };
+
+    for(let x in disabledInfo){
+      disabledInfo[x] = disabledInfo[x] <= 0;
+    };
+
+
+
+
+    let burger =this.state.error? <p>Ingrdient Not Available, Application is Down</p>:<Spinner/>;
+    let orderSummary = null
+    if(this.state.Ingredients){
+      burger =  (       <><Burger Ingredient={this.state.Ingredients} />
+        <BuildControls  
+        addIngredient={this.addIngredientHandler} 
+        removeIngredient={this.removeIngredientHandler} 
+        disableInfo={disabledInfo} 
+        price={this.state.totalPrice.toFixed(2)} 
+        disableOrderButton={this.state.isPurchasable}  
+        ordered={this.isPurshasingHandler}
+        />
+        </>
+      )
+      orderSummary= <OrderSummary 
+      AllIngredient={this.state.Ingredients} 
+      totalPrice={this.state.totalPrice} 
+      closeOrder={this.hideBackdropHandler} 
+      continueOrder={this.continueOrderHandler} />
+    }
+
+    if(this.state.isLoading){
+      orderSummary = <Spinner/>
+     }
+
+    return (
+      <Aux>
+        <Modal show={this.state.purchasing} showHideBackdrop={this.hideBackdropHandler}>
+          {orderSummary}
+        </Modal>
+        {burger}
+      </Aux>
+    );
+  }
+}
+
+
+export default withErrorHandler(BurgerBuilder, Axios);
