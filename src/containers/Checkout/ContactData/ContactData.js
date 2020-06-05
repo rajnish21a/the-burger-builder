@@ -5,6 +5,8 @@ import Axios from "../../../hoc/axios-order";
 import Spinner from "../../../components/UI/Spinner/Spinner";
 import Inputs from "../../../components/UI/Inputs/Inputs";
 import { connect } from "react-redux";
+import * as ActionName from "../../../store/actions/index";
+import withErrorHandler from "../../../hoc/withErrorHandler/withErrorHandler";
 
 
 class ContactData extends Component{
@@ -59,13 +61,14 @@ class ContactData extends Component{
             ]
           }
         }
-    },
-    isLoading: false
+    }
+    //,
+    //isLoading: false
   }
 
   orderHandler = (event)=>{
     event.preventDefault();
-    this.setState({isLoading: true});
+    //this.setState({isLoading: true});
     const order = {
       Ingredient: this.props.ings,
       price: this.props.price,
@@ -78,16 +81,9 @@ class ContactData extends Component{
       },
       deliveryMethod:'Fastest'
     }
-    Axios.post('order.json', order)
-    .then((response)=>{
-      console.log(response);
-      this.setState({isLoading: false});
-      this.props.history.push("/");
-    })
-    .catch((error)=>{
-      console.log(error)
-      this.setState({isLoading: false});
-    });
+    
+    this.props.onOrderHandlerStart(order);
+
   }
 
   inputChangedHandler = (event, elementKey)=>{
@@ -123,7 +119,7 @@ class ContactData extends Component{
       <Button btnType="Success" >Order</Button> 
     </form>
     );
-    if(this.state.isLoading){
+    if(this.props.loading){
       form=<Spinner/>
     }
 
@@ -139,11 +135,18 @@ class ContactData extends Component{
 }
 
 
-const mapsStateToProps = (state)=>{
+const mapDispatchToProps = (dispatch)=>{
   return {
-    ings: state.Ingredients,
-    price: state.totalPrice
+    onOrderHandlerStart: (order)=>{dispatch(ActionName.purchaseOrder(order))}
   }
 }
 
-export default connect(mapsStateToProps)(ContactData);
+const mapsStateToProps = (state)=>{
+  return {
+    ings: state.burgerBuilder.Ingredients,
+    price: state.burgerBuilder.totalPrice,
+    loading: state.order.loading
+  }
+}
+
+export default connect(mapsStateToProps,mapDispatchToProps)(withErrorHandler(ContactData, Axios));

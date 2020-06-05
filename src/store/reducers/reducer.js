@@ -1,4 +1,4 @@
-import * as ActionName from "./actions";
+import * as ActionName from "../actions/actionTypes";
 
 const INGREDIENT_PRICE={
   meat: 0.5,
@@ -8,13 +8,9 @@ const INGREDIENT_PRICE={
 }
 
 const initialState = {
-  Ingredients:{
-    meat: 0,
-    salad:0,
-    cheese:0,
-    bacon:0
-  },
-  totalPrice: 4
+  Ingredients:{},
+  totalPrice: 4,
+  error: false
 }
 
 
@@ -41,7 +37,16 @@ const reducer = (state= initialState, action)=>{
         },
         totalPrice: state.totalPrice - INGREDIENT_PRICE[action.ingredName]
       }
-      // this.enableOrderButtonHandler(dupIngredientRemove);
+    case ActionName.INIT_INGREDIENT:
+      return {
+        ...state,
+        Ingredients: action.data
+      }
+    case ActionName.INIT_INGREDIENT_FAILED:  
+      return {
+        ...state,
+        error: true
+      }
     default:
       return state;
   }

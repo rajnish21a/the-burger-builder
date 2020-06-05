@@ -8,8 +8,8 @@ import Axios from "../../hoc/axios-order";
 import Spinner from "../../components/UI/Spinner/Spinner";
 import withErrorHandler from "../../hoc/withErrorHandler/withErrorHandler";
 import { connect } from "react-redux";
-import * as ActionName from "../../store/actions";
-
+import * as ActionName from "../../store/actions/index";
+//import * as ActionName from "../../store/actions/burgerBuilder";
 const INGREDIENT_PRICE={
   meat: 0.5,
   salad:0.4,
@@ -24,7 +24,7 @@ class BurgerBuilder extends Component{
     isPurchasable: false,
     purchasing: false,
     isLoading:false,
-    error:false
+    //error:false
   }
 
   componentDidMount(){
@@ -36,6 +36,7 @@ class BurgerBuilder extends Component{
     //   console.log(error)
     //   this.setState({error:true})
     // })
+this.props.onInitIngredientHandler();
   }
 
   isPurshasingHandler = ()=>{
@@ -49,6 +50,7 @@ class BurgerBuilder extends Component{
   }
 
   continueOrderHandler = ()=>{
+    this.props.onPurchaseInit();
     this.props.history.push('/checkout');
   }
 
@@ -74,8 +76,8 @@ class BurgerBuilder extends Component{
 
 
 
-
-    let burger =this.state.error? <p>Ingrdient Not Available, Application is Down</p>:<Spinner/>;
+    
+    let burger =this.props.err? <p>Ingrdient Not Available, Application is Down</p>:<Spinner/>;
     let orderSummary = null
     if(this.props.ing){
       burger =  (       <><Burger Ingredient={this.props.ing} />
@@ -113,15 +115,18 @@ class BurgerBuilder extends Component{
 
 const mapDispatchToProps = dispatch=>{
   return {
-    onAddIngredientHandler: (ingred)=>{dispatch({type: ActionName.ADD_INGREDIENT, ingredName: ingred})},
-    onRemoveIngredientHandler: (ingred)=>{dispatch({type: ActionName.REMOVE_INGREDIENT, ingredName: ingred})}
+    onAddIngredientHandler: (ingred)=>{dispatch(ActionName.add_ingredient(ingred))},
+    onRemoveIngredientHandler: (ingred)=>{dispatch(ActionName.remove_ingredient(ingred))},
+    onInitIngredientHandler: (ingred)=>{dispatch(ActionName.init_ingredient())},
+    onPurchaseInit : ()=>{dispatch(ActionName.purchaseInit())}
   }
 }
 
 const mapStateToProps = (state)=>{
   return {
-    ing:state.Ingredients,
-    tPrice: state.totalPrice
+    ing:state.burgerBuilder.Ingredients,
+    tPrice: state.burgerBuilder.totalPrice,
+    err: state.burgerBuilder.error
   }
 }
 
